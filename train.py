@@ -13,9 +13,16 @@ from torch.autograd import Variable, grad
 from torch.utils.data import DataLoader
 from torchvision import datasets, transforms, utils
 
-from dataset import MultiResolutionDataset
+from dataset import MultiResolutionDataset, loader_CIFAR10
 from model import StyledGenerator, Discriminator
 
+from distributed import (
+    get_rank,
+    synchronize,
+    reduce_loss_dict,
+    reduce_sum,
+    get_world_size,
+)
 
 def requires_grad(model, flag=True):
     for p in model.parameters():
@@ -46,9 +53,10 @@ def adjust_lr(optimizer, lr):
 def train(args, dataset, generator, discriminator):
     step = int(math.log2(args.init_size)) - 2
     resolution = 4 * 2 ** step
-    loader = sample_data(
-        dataset, args.batch.get(resolution, args.batch_default), resolution
-    )
+    #loader = sample_data(
+    #    dataset, args.batch.get(resolution, args.batch_default), resolution
+    #)
+    loader = loader_CIFAR10(args.batch_size, args.dataset_path)
     data_loader = iter(loader)
 
     adjust_lr(g_optimizer, args.lr.get(resolution, 0.001))
@@ -252,12 +260,12 @@ def train(args, dataset, generator, discriminator):
 
 if __name__ == '__main__':
     code_size = 512
-    batch_size = 16
+    batch_size = 32
     n_critic = 1
 
     parser = argparse.ArgumentParser(description='Progressive Growing of GANs')
 
-    parser.add_argument('path', type=str, help='path of specified dataset')
+    parser.add_argument('dataset_path', type=str, help='path of specified dataset')
     parser.add_argument(
         '--phase',
         type=int,
@@ -266,8 +274,9 @@ if __name__ == '__main__':
     )
     parser.add_argument('--lr', default=0.001, type=float, help='learning rate')
     parser.add_argument('--sched', action='store_true', help='use lr scheduling')
+    parser.add_argument('--distributed', action='store_true', help='train distributed')
     parser.add_argument('--init_size', default=8, type=int, help='initial image size')
-    parser.add_argument('--max_size', default=1024, type=int, help='max image size')
+    parser.add_argument('--max_size', default=32, type=int, help='max image size')
     parser.add_argument(
         '--ckpt', default=None, type=str, help='load from previous checkpoints'
     )
@@ -319,15 +328,16 @@ if __name__ == '__main__':
         g_optimizer.load_state_dict(ckpt['g_optimizer'])
         d_optimizer.load_state_dict(ckpt['d_optimizer'])
 
-    transform = transforms.Compose(
-        [
-            transforms.RandomHorizontalFlip(),
-            transforms.ToTensor(),
-            transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5), inplace=True),
-        ]
-    )
+    #transform = transforms.Compose(
+    #    [
+    #        transforms.RandomHorizontalFlip(),
+    #        transforms.ToTensor(),
+    #        transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5), inplace=True),
+    #    ]
+    #)
 
-    dataset = MultiResolutionDataset(args.path, transform)
+    #dataset = MultiResolutionDataset(args.path, transform)
+    dataset = None
 
     if args.sched:
         args.lr = {128: 0.0015, 256: 0.002, 512: 0.003, 1024: 0.003}

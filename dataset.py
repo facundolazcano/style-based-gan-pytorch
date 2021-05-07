@@ -2,7 +2,36 @@ from io import BytesIO
 
 import lmdb
 from PIL import Image
+
+import numpy as np
+import torch
 from torch.utils.data import Dataset
+from torchvision import transforms, utils, datasets
+
+
+def loader_CIFAR10(batch_size, path_dataset="/home/jenny2/data/CIFAR10"):
+    dataset = datasets.CIFAR10(
+        path_dataset,
+        train=True,
+        download=True,
+        transform=transforms.Compose(
+            [
+                transforms.RandomHorizontalFlip(),
+                transforms.ToTensor(),
+                transforms.Normalize([0.5, 0.5, 0.5], [0.5, 0.5, 0.5])
+            ]
+        ),
+    )
+
+    kwargs = {'num_workers': 1, 'pin_memory': True}
+    loader = torch.utils.data.DataLoader(
+        dataset,
+        batch_size=batch_size,
+        shuffle=True,
+        **kwargs
+    )
+
+    return loader
 
 
 class MultiResolutionDataset(Dataset):
