@@ -277,6 +277,7 @@ if __name__ == '__main__':
     parser.add_argument('--distributed', action='store_true', help='train distributed')
     parser.add_argument('--init_size', default=8, type=int, help='initial image size')
     parser.add_argument('--max_size', default=32, type=int, help='max image size')
+    parser.add_argument('--batch_size', default=32, type=int, help='size of data batch')
     parser.add_argument(
         '--ckpt', default=None, type=str, help='load from previous checkpoints'
     )
