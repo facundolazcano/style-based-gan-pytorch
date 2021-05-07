@@ -125,6 +125,7 @@ def train(args, dataset, generator, discriminator):
         except (OSError, StopIteration):
             data_loader = iter(loader)
             real_image = next(data_loader)
+            real_image = real_image[0]
 
         used_sample += real_image.shape[0]
 
