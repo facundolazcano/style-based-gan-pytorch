@@ -9,7 +9,7 @@ from torch.utils.data import Dataset
 from torchvision import transforms, utils, datasets
 
 
-def loader_CIFAR10(batch_size, path_dataset="/home/jenny2/data/CIFAR10"):
+def loader_CIFAR10(batch_size, path_dataset="/home/jenny2/data/CIFAR10", resolution=4):
     dataset = datasets.CIFAR10(
         path_dataset,
         train=True,
@@ -17,6 +17,7 @@ def loader_CIFAR10(batch_size, path_dataset="/home/jenny2/data/CIFAR10"):
         transform=transforms.Compose(
             [
                 transforms.RandomHorizontalFlip(),
+                transforms.Resize(resolution),
                 transforms.ToTensor(),
                 transforms.Normalize([0.5, 0.5, 0.5], [0.5, 0.5, 0.5])
             ]

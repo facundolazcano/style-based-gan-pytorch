@@ -56,7 +56,7 @@ def train(args, dataset, generator, discriminator):
     #loader = sample_data(
     #    dataset, args.batch.get(resolution, args.batch_default), resolution
     #)
-    loader = loader_CIFAR10(args.batch_size, args.dataset_path)
+    loader = loader_CIFAR10(args.batch_size, args.dataset_path, resolution)
     data_loader = iter(loader)
 
     adjust_lr(g_optimizer, args.lr.get(resolution, 0.001))
@@ -100,9 +100,7 @@ def train(args, dataset, generator, discriminator):
 
             resolution = 4 * 2 ** step
 
-            loader = sample_data(
-                dataset, args.batch.get(resolution, args.batch_default), resolution
-            )
+            loader = loader_CIFAR10(args.batch_size, args.dataset_path, resolution)
             data_loader = iter(loader)
 
             torch.save(
@@ -125,7 +123,9 @@ def train(args, dataset, generator, discriminator):
         except (OSError, StopIteration):
             data_loader = iter(loader)
             real_image = next(data_loader)
-            real_image = real_image[0]
+
+        real_image = real_image[0]
+        #real_image = transforms.Resize(resolution)(real_image)
 
         used_sample += real_image.shape[0]
 
