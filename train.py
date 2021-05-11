@@ -111,7 +111,7 @@ def train(args, dataset, generator, discriminator):
                     'd_optimizer': d_optimizer.state_dict(),
                     'g_running': g_running.state_dict(),
                 },
-                f'checkpoint/train_step-{ckpt_step}.model',
+                args.output_path + '/' + f'checkpoint/train_step-{ckpt_step}.model',
             )
 
             adjust_lr(g_optimizer, args.lr.get(resolution, 0.001))
@@ -131,14 +131,15 @@ def train(args, dataset, generator, discriminator):
 
         b_size = real_image.size(0)
         real_image = real_image.cuda()
+        real_image.requires_grad = True
 
         if args.loss == 'wgan-gp':
+            
             real_predict = discriminator(real_image, step=step, alpha=alpha)
             real_predict = real_predict.mean() - 0.001 * (real_predict ** 2).mean()
             (-real_predict).backward()
 
         elif args.loss == 'r1':
-            real_image.requires_grad = True
             real_scores = discriminator(real_image, step=step, alpha=alpha)
             real_predict = F.softplus(-real_scores).mean()
             real_predict.backward(retain_graph=True)
@@ -240,7 +241,7 @@ def train(args, dataset, generator, discriminator):
 
             utils.save_image(
                 torch.cat(images, 0),
-                f'sample/{str(i + 1).zfill(6)}.png',
+                args.output_path + '/' + f'sample/{str(i + 1).zfill(6)}.png',
                 nrow=gen_i,
                 normalize=True,
                 range=(-1, 1),
@@ -267,6 +268,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Progressive Growing of GANs')
 
     parser.add_argument('dataset_path', type=str, help='path of specified dataset')
+    parser.add_argument('output_path', type=str, help='path of output model')
     parser.add_argument(
         '--phase',
         type=int,
