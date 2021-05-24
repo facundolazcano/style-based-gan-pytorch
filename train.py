@@ -18,13 +18,13 @@ from torchvision import datasets, transforms, utils
 from dataset import MultiResolutionDataset, loader_CIFAR10
 from model import StyledGenerator, Discriminator
 
-from distributed import (
-    get_rank,
-    synchronize,
-    reduce_loss_dict,
-    reduce_sum,
-    get_world_size,
-)
+#from distributed import (
+#    get_rank,
+#    synchronize,
+#    reduce_loss_dict,
+#    reduce_sum,
+#    get_world_size,
+#)
 
 def requires_grad(model, flag=True):
     for p in model.parameters():
@@ -257,7 +257,7 @@ def train(args, dataset, generator, discriminator):
                     'g_optimizer': g_optimizer.state_dict(),
                     'd_optimizer': d_optimizer.state_dict(),
                     'g_running': g_running.state_dict(),
-                }
+                },
                 op.join(args.output_path, f'checkpoint/{str(i + 1).zfill(6)}.model')
             )
 
@@ -312,9 +312,9 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     # make dirs for save models and sampled
-    os.makedirs(args.path, exist_ok=True)
-    os.makedirs(op.join(args.path, 'sample'), exist_ok=True)
-    os.makedirs(op.join(args.path, 'checkpoint'), exist_ok=True)    
+    os.makedirs(args.output_path, exist_ok=True)
+    os.makedirs(op.join(args.output_path, 'sample'), exist_ok=True)
+    os.makedirs(op.join(args.output_path, 'checkpoint'), exist_ok=True)    
 
     generator = nn.DataParallel(StyledGenerator(code_size)).cuda()
     discriminator = nn.DataParallel(
