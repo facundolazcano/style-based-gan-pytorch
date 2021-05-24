@@ -1,4 +1,6 @@
 import argparse
+import os
+import os.path as op
 import random
 import math
 
@@ -111,7 +113,7 @@ def train(args, dataset, generator, discriminator):
                     'd_optimizer': d_optimizer.state_dict(),
                     'g_running': g_running.state_dict(),
                 },
-                args.output_path + '/' + f'checkpoint/train_step-{ckpt_step}.model',
+                op.join(args.output_path, f'checkpoint/train_step-{ckpt_step}.model'),
             )
 
             adjust_lr(g_optimizer, args.lr.get(resolution, 0.001))
@@ -241,7 +243,7 @@ def train(args, dataset, generator, discriminator):
 
             utils.save_image(
                 torch.cat(images, 0),
-                args.output_path + '/' + f'sample/{str(i + 1).zfill(6)}.png',
+                op.join(args.output_path, f'sample/{str(i + 1).zfill(6)}.png'),
                 nrow=gen_i,
                 normalize=True,
                 range=(-1, 1),
@@ -249,7 +251,14 @@ def train(args, dataset, generator, discriminator):
 
         if (i + 1) % 10000 == 0:
             torch.save(
-                g_running.state_dict(), f'checkpoint/{str(i + 1).zfill(6)}.model'
+                {
+                    'generator': generator.module.state_dict(),
+                    'discriminator': discriminator.module.state_dict(),
+                    'g_optimizer': g_optimizer.state_dict(),
+                    'd_optimizer': d_optimizer.state_dict(),
+                    'g_running': g_running.state_dict(),
+                }
+                op.join(args.output_path, f'checkpoint/{str(i + 1).zfill(6)}.model')
             )
 
         state_msg = (
@@ -302,6 +311,11 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
 
+    # make dirs for save models and sampled
+    os.makedirs(args.path, exist_ok=True)
+    os.makedirs(op.join(args.path, 'sample'), exist_ok=True)
+    os.makedirs(op.join(args.path, 'checkpoint'), exist_ok=True)    
+
     generator = nn.DataParallel(StyledGenerator(code_size)).cuda()
     discriminator = nn.DataParallel(
         Discriminator(from_rgb_activate=not args.no_from_rgb_activate)
@@ -325,7 +339,14 @@ if __name__ == '__main__':
 
     if args.ckpt is not None:
         ckpt = torch.load(args.ckpt)
-        print(ckpt.keys())
+
+        try:
+            ckpt_name = op.basename(args.ckpt)
+            args.start_iter = int(os.path.splitext(ckpt_name)[0])
+
+        except ValueError:
+            pass
+
         generator.module.load_state_dict(ckpt['generator'])
         discriminator.module.load_state_dict(ckpt['discriminator'])
         g_running.load_state_dict(ckpt['g_running'])
