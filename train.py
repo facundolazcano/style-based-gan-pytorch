@@ -325,7 +325,7 @@ if __name__ == '__main__':
 
     if args.ckpt is not None:
         ckpt = torch.load(args.ckpt)
-
+        print(ckpt.keys())
         generator.module.load_state_dict(ckpt['generator'])
         discriminator.module.load_state_dict(ckpt['discriminator'])
         g_running.load_state_dict(ckpt['g_running'])
